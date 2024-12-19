@@ -2,12 +2,14 @@
 
 
 #include "LyraGameModeBase.h"
+#include "LyraExperienceDefinition.h"
 #include "LyraExperienceManagerComponent.h"
 #include "LyraGameState.h"
 #include "LyraPrac/LyraLogChannels.h"
 #include "LyraPrac/Character/LyraCharacter.h"
 #include "LyraPrac/Player/LyraPlayerController.h"
 #include "LyraPrac/Player/LyraPlayerState.h"
+#include "LyraPrac/Character/LyraPawnData.h"
 
 ALyraGameModeBase::ALyraGameModeBase()
 {
@@ -40,6 +42,21 @@ void ALyraGameModeBase::InitGameState()
 	ExperienceManagerComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
 }
 
+UClass* ALyraGameModeBase::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	// GetPawnDataForController를 활용하여, PawnData로부터 PawnClass를 유도하자
+	if (const ULyraPawnData* PawnData = GetPawnDataForController(InController))
+	{
+		if (PawnData->PawnClass)
+		{
+			return PawnData->PawnClass;
+		}
+	}
+
+	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+PRAGMA_DISABLE_OPTIMIZATION
 void ALyraGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
 	// 로딩이 되어야지만 스폰.
@@ -48,6 +65,7 @@ void ALyraGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController
 		Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	}
 }
+PRAGMA_ENABLE_OPTIMIZATION
 
 APawn* ALyraGameModeBase::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
 {
@@ -62,6 +80,41 @@ APawn* ALyraGameModeBase::SpawnDefaultPawnAtTransform_Implementation(AController
 // HandleMatchAssignmentIfNotExpectingOne이라는 이름을 가짐.
 void ALyraGameModeBase::HandleMatchAssignmentIfNotExpectingOne()
 {
+	// 해당 함수에서는 우리가 로딩할 Experience에 대해 PrimaryAssetId를 생성하여, OnMatchAssignmentGiven으로 넘겨준다
+
+	FPrimaryAssetId ExperienceId;
+
+	// precedence order (highest wins)
+	// - matchmaking assignment (if present)
+	// - default experience
+
+	UWorld* World = GetWorld();
+
+	// fall back to the default experience
+	// 일단 기본 옵션으로 default하게 B_LyraDefaultExperience로 설정놓자
+	// 이걸 했다고 로딩이 되는 것이 아니라 LyraExperienceDefinition 타입의 experience를 스캔 가능하도록 가져온 것임.
+	if (!ExperienceId.IsValid())
+	{
+		ExperienceId = FPrimaryAssetId(FPrimaryAssetType("LyraExperienceDefinition"), FName("B_LyraDefaultExperience"));
+	}
+
+	// 필자가 이해한 HandleMatchAssignmentIfNotExpectingOne과 OnMatchAssignmentGiven()은 아직 직관적으로 이름이 와닫지 않는다고 생각한다
+	// - 후일, 어느정도 Lyra가 구현되면, 해당 함수의 명을 더 이해할 수 있을 것으로 예상한다
+	OnMatchAssignmentGiven(ExperienceId);
+}
+
+// ExperienceId를 선택했으니깐 로딩을 네가 해줘!라고 요청하는 함수
+// 이걸 보면 알 수 있는 것이 게임모드에서 Experience 로딩을 하고 관리를 하는 것이 아니라
+// ExperienceManagerComponent에서 하는 것임을 알 수 있다!
+void ALyraGameModeBase::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId)
+{
+	// 해당 함수는 ExperienceManagerComponent을 활용하여 Experience을 로딩하기 위해, ExperienceManagerComponent의 ServerSetCurrentExperience를 호출한다
+
+	check(ExperienceId.IsValid());
+
+	ULyraExperienceManagerComponent* ExperienceManagerComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
+	check(ExperienceManagerComponent);
+	ExperienceManagerComponent->ServerSetCurrentExperience(ExperienceId);
 }
 
 bool ALyraGameModeBase::IsExperienceLoaded() const
@@ -75,4 +128,56 @@ bool ALyraGameModeBase::IsExperienceLoaded() const
 
 void ALyraGameModeBase::OnExperienceLoaded(const ULyraExperienceDefinition* CurrentExperience)
 {
+	// PlayerController를 순회하며
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		APlayerController* PC = Cast<APlayerController>(*Iterator);
+
+		// PlayerController가 Pawn을 Possess하지 않았다면, RestartPlayer를 통해 Pawn을 다시 Spawn한다
+		// - 한번 OnPossess를 보도록 하자:
+		if (PC && PC->GetPawn() == nullptr)
+		{
+			if (PlayerCanRestart(PC))
+			{
+				// 나 이제 experience loading을 완료했으니 내가 막아놨던 지점부터 다시 진행해!
+				RestartPlayer(PC);
+			}
+		}
+	}
+}
+
+// 함수의 통일성을 위해서 pawn data를 게임모드를 통해서 가져옴.
+const ULyraPawnData* ALyraGameModeBase::GetPawnDataForController(const AController* InController) const
+{
+	// 게임 도중에 PawnData가 오버라이드 되었을 경우, PawnData는 PlayerState에서 가져오게 됨
+	if (InController)
+	{
+		if (const ALyraPlayerState* HakPS = InController->GetPlayerState<ALyraPlayerState>())
+		{
+			// GetPawnData 구현
+			if (const ULyraPawnData* PawnData = HakPS->GetPawnData<ULyraPawnData>())
+			{
+				return PawnData;
+			}
+		}
+	}
+
+	// fall back to the default for the current experience
+	// 아직 PlayerState에 PawnData가 설정되어 있지 않은 경우, ExperienceManagerComponent의 CurrentExperience로부터 가져와서 설정
+	check(GameState);
+	ULyraExperienceManagerComponent* ExperienceManagerComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
+	check(ExperienceManagerComponent);
+
+	if (ExperienceManagerComponent->IsExperienceLoaded())
+	{
+		// GetExperienceChecked 구현
+		const ULyraExperienceDefinition* Experience = ExperienceManagerComponent->GetCurrentExperienceChecked();
+		if (Experience->DefaultPawnData)
+		{
+			return Experience->DefaultPawnData;
+		}
+	}
+
+	// 어떠한 케이스에도 핸들링 안되었으면 nullptr
+	return nullptr;
 }

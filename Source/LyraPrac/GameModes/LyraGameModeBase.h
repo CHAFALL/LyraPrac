@@ -6,7 +6,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "LyraGameModeBase.generated.h"
 
+// 전방 선언을 했으면 CPP에도 반드시 include해줘야 됨.
 
+class ULyraPawnData;
 class ULyraExperienceDefinition;
 
 /**
@@ -28,6 +30,9 @@ public:
 	// 즉, 예약 가능한 상태.
 	virtual void InitGameState() final;
 
+	// 우리의 작고 귀여운 친구를 가져오기 위해 오버라이딩
+	/** GetDefaultPawnClassForController */
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) final;
 
 	// 우리가 원하는 것은 experience 로딩이 완료가 된 후에 캐릭터가 스폰되길 원함
 	// 그래서 스폰 관련 부분을 오버라이딩해서 experience 로딩이 완료되기 전까지 막아놓을 것임.
@@ -43,8 +48,11 @@ public:
 	 * member methods
 	 */
 	void HandleMatchAssignmentIfNotExpectingOne();
+	void OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId);
 	bool IsExperienceLoaded() const;
 	void OnExperienceLoaded(const ULyraExperienceDefinition* CurrentExperience);
+	const ULyraPawnData* GetPawnDataForController(const AController* InController) const;
+
 };
 
 
@@ -55,6 +63,10 @@ public:
 // 알아야 할 점 : 엔진을 수정하지 않고 오버라이딩 식으로 진행함
 // 로딩이 완료되기전까지는 대기, 그 중간다리는 experience manager가 해줌.
 
+// 라이라 방식 - 내가 뭔가를 했더니 문제가 있네? 그래서 찾아들어가보면 엔진에서 설정되어 있는 값이 있을 것이고
+// 그걸 우리가 원하는 방식으로 바꾸기 위해 오버라이딩
+
+// 압축 정리 - #4의 22분 부터
 
 
 

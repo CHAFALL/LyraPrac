@@ -17,6 +17,7 @@ public class LyraPrac : ModuleRules
             "GameplayTags",
             // Game Features
             "ModularGameplay",
+            "GameFeatures",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });

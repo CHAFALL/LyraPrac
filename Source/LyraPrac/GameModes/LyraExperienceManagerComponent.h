@@ -8,8 +8,6 @@
 
 class ULyraExperienceDefinition;
 
-
-
 // Experience 로딩 단계
 enum class ELyraExperienceLoadState
 {
@@ -44,6 +42,13 @@ public:
 	 * 아래의 OnExperienceLoaded에 바인딩하거나, 이미 Experience 로딩이 완료되었다면 바로 호출함
 	 */
 	void CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate&& Delegate);
+
+	void ServerSetCurrentExperience(FPrimaryAssetId ExperienceId);
+	void StartExperienceLoad();
+	void OnExperienceLoadComplete();
+	void OnExperienceFullLoadCompleted();
+	const ULyraExperienceDefinition* GetCurrentExperienceChecked() const;
+
 
 public:
 	// 내가 어떤 것을 로딩할 것 인지.
