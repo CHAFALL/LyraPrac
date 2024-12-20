@@ -10,6 +10,7 @@
 #include "LyraPrac/Player/LyraPlayerController.h"
 #include "LyraPrac/Player/LyraPlayerState.h"
 #include "LyraPrac/Character/LyraPawnData.h"
+#include "LyraPrac/Character/LyraPawnExtensionComponent.h"
 
 ALyraGameModeBase::ALyraGameModeBase()
 {
@@ -67,11 +68,33 @@ void ALyraGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
+// 스폰하는 곳에서 캐싱까지 처리해줌.
 APawn* ALyraGameModeBase::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
 {
-	// 이 로그가 찍힌다는 것은 폰이 스폰이 되었다는 것임.
-	UE_LOG(LogLyra, Log, TEXT("SpawnDefaultPawnAtTransform_Implementation is called!"));
-	return Super::SpawnDefaultPawnAtTransform_Implementation(NewPlayer, SpawnTransform);
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Instigator = GetInstigator();
+	SpawnInfo.ObjectFlags |= RF_Transient;
+	SpawnInfo.bDeferConstruction = true;
+
+	if (UClass* PawnClass = GetDefaultPawnClassForController(NewPlayer))
+	{
+		if (APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnTransform, SpawnInfo))
+		{
+			// FindPawnExtensionComponent 구현
+			if (ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(SpawnedPawn))
+			{
+				if (const ULyraPawnData* PawnData = GetPawnDataForController(NewPlayer))
+				{
+					PawnExtComp->SetPawnData(PawnData);
+				}
+			}
+
+			SpawnedPawn->FinishSpawning(SpawnTransform);
+			return SpawnedPawn;
+		}
+	}
+
+	return nullptr;
 }
 
 // 우리가 experience를 결정해주면 해당하는 experience를 로딩을 시작해줄 것임.
@@ -152,10 +175,10 @@ const ULyraPawnData* ALyraGameModeBase::GetPawnDataForController(const AControll
 	// 게임 도중에 PawnData가 오버라이드 되었을 경우, PawnData는 PlayerState에서 가져오게 됨
 	if (InController)
 	{
-		if (const ALyraPlayerState* HakPS = InController->GetPlayerState<ALyraPlayerState>())
+		if (const ALyraPlayerState* LyraPS = InController->GetPlayerState<ALyraPlayerState>())
 		{
 			// GetPawnData 구현
-			if (const ULyraPawnData* PawnData = HakPS->GetPawnData<ULyraPawnData>())
+			if (const ULyraPawnData* PawnData = LyraPS->GetPawnData<ULyraPawnData>())
 			{
 				return PawnData;
 			}

@@ -22,7 +22,7 @@ public:
 	/**
 	* UAssetManager's interfaces
 	*/
-	// 함수가 시작되는 시점.
+	// 함수가 시작되는 시점.(매우 초반)
 	virtual void StartInitialLoading() final;
 
 	/**

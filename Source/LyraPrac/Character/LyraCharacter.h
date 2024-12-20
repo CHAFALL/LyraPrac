@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "LyraCharacter.generated.h"
 
+class ULyraPawnExtensionComponent;
+
 UCLASS()
 class LYRAPRAC_API ALyraCharacter : public ACharacter
 {
@@ -26,4 +28,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character")
+	TObjectPtr<ULyraPawnExtensionComponent> PawnExtComponent;
 };

@@ -3,6 +3,7 @@
 
 #include "LyraAssetManager.h"
 #include "LyraPrac/LyraLogChannels.h"
+#include "LyraPrac/LyraGameplayTags.h"
 
 ULyraAssetManager::ULyraAssetManager()
 {
@@ -31,6 +32,7 @@ PRAGMA_DISABLE_OPTIMIZATION
 void ULyraAssetManager::StartInitialLoading()
 {
 	Super::StartInitialLoading();
+	FLyraGameplayTags::InitializeNativeTags();
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
