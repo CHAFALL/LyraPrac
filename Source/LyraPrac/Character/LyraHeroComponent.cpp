@@ -8,6 +8,7 @@
 #include "LyraPrac/LyraGameplayTags.h"
 #include "LyraPrac/LyraLogChannels.h"
 #include "LyraPrac/Player/LyraPlayerState.h"
+#include "LyraPrac/Camera/LyraCameraComponent.h"
 
 /** FeatureName 정의: static member variable 초기화 */
 const FName ULyraHeroComponent::NAME_ActorFeatureName("Hero");
@@ -145,6 +146,15 @@ void ULyraHeroComponent::HandleChangeInitState(UGameFrameworkComponentManager* M
 		{
 			PawnData = PawnExtComp->GetPawnData<ULyraPawnData>();
 		}
+
+		if (bIsLocallyControlled && PawnData)
+		{
+			// 현재 LyraCharacter에 Attach된 CameraComponent를 찾음
+			if (ULyraCameraComponent* CameraComponent = ULyraCameraComponent::FindCameraComponent(Pawn))
+			{
+				CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+			}
+		}
 	}
 }
 
@@ -172,3 +182,24 @@ void ULyraHeroComponent::CheckDefaultInitialization()
 	static const TArray<FGameplayTag> StateChain = { InitTags.InitState_Spawned, InitTags.InitState_DataAvailable, InitTags.InitState_DataInitialized, InitTags.InitState_GameplayReady };
 	ContinueInitStateChain(StateChain);
 }
+
+PRAGMA_DISABLE_OPTIMIZATION
+TSubclassOf<ULyraCameraMode> ULyraHeroComponent::DetermineCameraMode() const
+{
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return nullptr;
+	}
+
+	if (ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+	{
+		if (const ULyraPawnData* PawnData = PawnExtComp->GetPawnData<ULyraPawnData>())
+		{
+			return PawnData->DefaultCameraMode;
+		}
+	}
+
+	return nullptr;
+}
+PRAGMA_ENABLE_OPTIMIZATION

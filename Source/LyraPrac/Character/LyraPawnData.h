@@ -6,6 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "LyraPawnData.generated.h"
 
+class ULyraCameraMode;
+
 /**
  * 
  */
@@ -21,6 +23,10 @@ public:
 	/** Pawn의 Class */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Pawn")
 	TSubclassOf<APawn> PawnClass;
+
+	/** Camera Mode */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
+	TSubclassOf<ULyraCameraMode> DefaultCameraMode;
 };
 
 

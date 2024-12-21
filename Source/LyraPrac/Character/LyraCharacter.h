@@ -7,6 +7,7 @@
 #include "LyraCharacter.generated.h"
 
 class ULyraPawnExtensionComponent;
+class ULyraCameraComponent;
 
 UCLASS()
 class LYRAPRAC_API ALyraCharacter : public ACharacter
@@ -31,4 +32,7 @@ public:
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character")
 	TObjectPtr<ULyraPawnExtensionComponent> PawnExtComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character")
+	TObjectPtr<ULyraCameraComponent> CameraComponent;
 };

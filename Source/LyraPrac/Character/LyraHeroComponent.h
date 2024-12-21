@@ -7,6 +7,8 @@
 #include "Components/PawnComponent.h"
 #include "LyraHeroComponent.generated.h"
 
+class ULyraCameraMode;
+
 /**
  * component that sets up input and camera handling for player controlled pawns (or bots that simulate players)
  * - this depends on a PawnExtensionComponent to coordinate initialization
@@ -45,6 +47,11 @@ public:
 	// 시스템을 처리하는 컴포넌트이기 때문.
 	virtual void HandleChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) final;
 	virtual void CheckDefaultInitialization() final;
+
+	/**
+	 * member methods
+	 */
+	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
 };
 
 
