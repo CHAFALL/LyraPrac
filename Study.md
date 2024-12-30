@@ -75,10 +75,34 @@
   - 캐릭터의 시야를 캡처하지만, 직접 렌더링하지 않음
   - 대신 캡처한 시점 정보를 PlayerCameraManager에 전달하여 최종 출력을 담당하게 함
 
--  CameraComponent가 직접 렌더링하지 않는 이유
+- CameraComponent가 직접 렌더링하지 않는 이유
   
   - 플레이어 컨트롤러는 게임 중 다른 캐릭터로 자유롭게 전환될 수 있음
   - 이러한 유연성을 지원하기 위해 카메라 시스템이 특정 캐릭터에 종속되지 않아야 함
   - 따라서 PlayerController 내부에 CameraManager를 두어 캐릭터 독립적인 카메라 시스템을 구현
+
+##### 입력 방식이 바뀐 이유 (Input Mapping Context가 생긴 이유)
+
+- 기존 : 예전에는 하나의 Input Action에서 여러 게임 상태(비행기 모드, 탱크 모드 등)에 따른 분기 처리
+
+- Input Mapping Context를 통해 각 게임 상태별로 입력을 완전히 분리가능!!!
+  
+  - 여러 조건문을 관리할 필요가 사라짐!!
+
+##### 입력 관련 내용
+
+- Input Action
+  
+  - 게임에서 수행할 수 있는 추상적인 동작을 정의
+  
+  - **입력값의 타입을 지정**
+
+- Input Mapping Context
+  
+  - Input Action과 실제 물리적 입력(키보드, 마우스, 게임패드 등)을 매핑하는 곳
+  
+  - 같은 Input Action이라도 상황에 따라 다른 키에 매핑 가능
+
+- 즉 Input Action은 "무엇을 할 것인가"를 정의하고, Input Mapping Context는 "어떤 키로 할 것인가"를 정의한다고 보면 됨.
 
 ---

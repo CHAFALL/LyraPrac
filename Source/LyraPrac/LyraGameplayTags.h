@@ -35,6 +35,12 @@ struct FLyraGameplayTags
 	FGameplayTag InitState_DataInitialized;
 	FGameplayTag InitState_GameplayReady;
 
+	/**
+	 * Enhanced Input Tags
+	 */
+	FGameplayTag InputTag_Move;
+	FGameplayTag InputTag_Look_Mouse;
+
 private:
 	// static 변수 초기화는 .cpp에 해주는 것을 잊지 말기!
 	// 싱글톤으로 사용하겠다!

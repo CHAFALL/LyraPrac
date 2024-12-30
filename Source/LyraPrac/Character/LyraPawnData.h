@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "LyraPawnData.generated.h"
 
+class ULyraInputConfig;
 class ULyraCameraMode;
 
 /**
@@ -16,8 +17,11 @@ class LYRAPRAC_API ULyraPawnData : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 	
+	
 public:
 	ULyraPawnData(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	// 3총사 + a
 
 	// PawnData에서 어떤 폰을 스폰할 것인지 결정해줘야 됨.
 	/** Pawn의 Class */
@@ -27,6 +31,10 @@ public:
 	/** Camera Mode */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
 	TSubclassOf<ULyraCameraMode> DefaultCameraMode;
+
+	/** input configuration used by player controlled pawns to create input mappings and bind input actions */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|InputConfig")
+	TObjectPtr<ULyraInputConfig> InputConfig;
 };
 
 

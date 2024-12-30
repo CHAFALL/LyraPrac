@@ -18,6 +18,9 @@ public class LyraPrac : ModuleRules
             // Game Features
             "ModularGameplay",
             "GameFeatures",
+            // Input
+            "InputCore",
+            "EnhancedInput",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });

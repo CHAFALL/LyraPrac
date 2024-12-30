@@ -4,11 +4,16 @@
 #include "LyraHeroComponent.h"
 #include "LyraPawnData.h"
 #include "LyraPawnExtensionComponent.h"
+#include "PlayerMappableInputConfig.h"
+#include "LyraPrac/Input/LyraMappableConfigPair.h"
+#include "LyraPrac/Input/LyraInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Components/GameFrameworkComponentManager.h"
 #include "LyraPrac/LyraGameplayTags.h"
 #include "LyraPrac/LyraLogChannels.h"
-#include "LyraPrac/Player/LyraPlayerState.h"
 #include "LyraPrac/Camera/LyraCameraComponent.h"
+#include "LyraPrac/Player/LyraPlayerController.h"
+#include "LyraPrac/Player/LyraPlayerState.h"
 
 /** FeatureName 정의: static member variable 초기화 */
 const FName ULyraHeroComponent::NAME_ActorFeatureName("Hero");
@@ -155,6 +160,14 @@ void ULyraHeroComponent::HandleChangeInitState(UGameFrameworkComponentManager* M
 				CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 			}
 		}
+
+		if (ALyraPlayerController* LyraPC = GetController<ALyraPlayerController>())
+		{
+			if (Pawn->InputComponent != nullptr)
+			{
+				InitializePlayerInput(Pawn->InputComponent);
+			}
+		}
 	}
 }
 
@@ -202,4 +215,120 @@ TSubclassOf<ULyraCameraMode> ULyraHeroComponent::DetermineCameraMode() const
 
 	return nullptr;
 }
+
 PRAGMA_ENABLE_OPTIMIZATION
+
+// 순회(가져오는) 순서 잘 보기!
+void ULyraHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputComponent)
+{
+	check(PlayerInputComponent);
+
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	// LocalPlayer를 가져오기 위해
+	const APlayerController* PC = GetController<APlayerController>();
+	check(PC);
+
+	// EnhancedInputLocalPlayerSubsystem 가져오기 위해
+	const ULocalPlayer* LP = PC->GetLocalPlayer();
+	check(LP);
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	check(Subsystem);
+
+	// EnhancedInputLocalPlayerSubsystem에 MappingContext를 비워준다:
+	Subsystem->ClearAllMappings();
+
+	// PawnExtensionComponent -> PawnData -> InputConfig 존재 유무 판단:
+	if (const ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+	{
+		if (const ULyraPawnData* PawnData = PawnExtComp->GetPawnData<ULyraPawnData>())
+		{
+			if (const ULyraInputConfig* InputConfig = PawnData->InputConfig)
+			{
+				const FLyraGameplayTags& GameplayTags = FLyraGameplayTags::Get();
+
+				// HeroComponent 가지고 있는 Input Mapping Context를 순회하며, EnhancedInputLocalPlayerSubsystem에 추가한다
+				for (const FLyraMappableConfigPair& Pair : DefaultInputConfigs)
+				{
+					if (Pair.bShouldActivateAutomatically)
+					{
+						FModifyContextOptions Options = {};
+						Options.bIgnoreAllPressedKeysUntilRelease = false;
+
+						// 내부적으로 Input Mapping Context를 추가한다:
+						// - AddPlayerMappableConfig를 간단히 보는 것을 추천
+						Subsystem->AddPlayerMappableConfig(Pair.Config.LoadSynchronous(), Options);
+					}
+				}
+
+				ULyraInputComponent* LyraIC = CastChecked<ULyraInputComponent>(PlayerInputComponent);
+				{
+					// InputTag_Move와 InputTag_Look_Mouse에 대해 각각 Input_Move()와 Input_LookMouse() 멤버 함수에 바인딩시킨다:
+					// - 바인딩한 이후, Input 이벤트에 따라 멤버 함수가 트리거된다
+					LyraIC->BindNativeAction(InputConfig, GameplayTags.InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move, false);
+					LyraIC->BindNativeAction(InputConfig, GameplayTags.InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &ThisClass::Input_LookMouse, false);
+				}
+			}
+		}
+	}
+}
+
+void ULyraHeroComponent::Input_Move(const FInputActionValue& InputActionValue)
+{
+	APawn* Pawn = GetPawn<APawn>();
+	AController* Controller = Pawn ? Pawn->GetController() : nullptr;
+
+	if (Controller)
+	{
+		const FVector2D Value = InputActionValue.Get<FVector2D>();
+		const FRotator MovementRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+
+		if (Value.X != 0.0f)
+		{
+			// Left/Right -> X 값에 들어있음:
+			// MovementDirection은 현재 카메라의 RightVector를 의미함 (World-Space)
+			const FVector MovementDirection = MovementRotation.RotateVector(FVector::RightVector);
+
+			// AddMovementInput 함수를 한번 보자:
+			// - 내부적으로 MovementDirection * Value.X를 MovementComponent에 적용(더하기)해준다
+			Pawn->AddMovementInput(MovementDirection, Value.X);
+		}
+
+		if (Value.Y != 0.0f) // 앞서 우리는 Forward 적용을 위해 swizzle input modifier를 사용했다~
+		{
+			// 앞서 Left/Right와 마찬가지로 Forward/Backward를 적용한다
+			const FVector MovementDirection = MovementRotation.RotateVector(FVector::ForwardVector);
+			Pawn->AddMovementInput(MovementDirection, Value.Y);
+		}
+	}
+}
+
+void ULyraHeroComponent::Input_LookMouse(const FInputActionValue& InputActionValue)
+{
+	APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	const FVector2D Value = InputActionValue.Get<FVector2D>();
+	if (Value.X != 0.0f)
+	{
+		// X에는 Yaw 값이 있음:
+		// - Camera에 대해 Yaw 적용
+		Pawn->AddControllerYawInput(Value.X);
+	}
+
+	if (Value.Y != 0.0f)
+	{
+		// Y에는 Pitch 값!
+		double AimInversionValue = -Value.Y;
+		Pawn->AddControllerPitchInput(AimInversionValue);
+	}
+}
+
