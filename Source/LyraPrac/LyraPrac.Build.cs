@@ -18,6 +18,7 @@ public class LyraPrac : ModuleRules
             // Game Features
             "ModularGameplay",
             "GameFeatures",
+            "ModularGameplayActors",
             // Input
             "InputCore",
             "EnhancedInput",

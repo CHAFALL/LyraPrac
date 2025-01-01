@@ -73,3 +73,9 @@ public:
 // 핵심은
 // 강제 업데이트랑
 // OnActorInitStateChanged
+
+
+
+// Cosmetic 시스템
+// GameFeature 시스템의 근본은 컴포넌트!
+// -> 컴포넌트를 붙이는 방식으로 캐릭터 메쉬를 붙여버림!!
