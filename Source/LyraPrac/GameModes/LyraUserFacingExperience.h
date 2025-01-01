@@ -6,6 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "LyraUserFacingExperience.generated.h"
 
+class UCommonSession_HostSessionRequest;
+
 /**
  * 
  */
@@ -16,6 +18,12 @@ class LYRAPRAC_API ULyraUserFacingExperience : public UPrimaryDataAsset
 	
 
 public:
+	/**
+	* Map 로딩 및 Experience 전환을 위해, MapID와 ExperienceID를 활용하여, HostSessionRequest 생성
+	*/
+	UFUNCTION(BlueprintCallable, BlueprintPure = false)
+	UCommonSession_HostSessionRequest* CreateHostingRequest() const;
+
 	/** the specific map to load */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Experience, meta = (AllowedTypes = "Map"))
 	FPrimaryAssetId MapID;

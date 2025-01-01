@@ -21,6 +21,8 @@ public class LyraPrac : ModuleRules
             // Input
             "InputCore",
             "EnhancedInput",
+            // CommonUser
+            "CommonUser",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });

@@ -32,6 +32,10 @@ public:
 	/** FeatureName 정의 */
 	static const FName NAME_ActorFeatureName;
 
+	// (추가)
+	/** Extension Event 이름 정의 */
+	static const FName NAME_BindInputsNow;
+
 	/**
 	 * UPawnComponent interface
 	 */

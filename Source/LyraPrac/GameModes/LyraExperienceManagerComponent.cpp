@@ -4,6 +4,9 @@
 #include "LyraExperienceManagerComponent.h"
 #include "GameFeaturesSubsystemSettings.h"
 #include "LyraExperienceDefinition.h"
+#include "GameFeaturesSubsystem.h"
+#include "GameFeatureAction.h"
+#include "LyraExperienceActionSet.h"
 #include "LyraPrac/System/LyraAssetManager.h"
 
 // 내가 물어보는 시점에 이미 experience 로딩이 완료가 되어있으면 불필요한 처리를 줄임.
@@ -55,6 +58,7 @@ void ULyraExperienceManagerComponent::ServerSetCurrentExperience(FPrimaryAssetId
 	StartExperienceLoad();
 }
 
+// Experience의 에셋을 로드
 PRAGMA_DISABLE_OPTIMIZATION
 void ULyraExperienceManagerComponent::StartExperienceLoad()
 {
@@ -98,7 +102,7 @@ void ULyraExperienceManagerComponent::StartExperienceLoad()
 
 	FStreamableDelegate OnAssetsLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnExperienceLoadComplete);
 
-	// 아래도, 후일 Bundle을 우리가 GameFeature에 연동하면서 더 깊게 알아보기로 하고, 지금은 앞서 B_HakDefaultExperience를 로딩해주는 함수로 생각하자
+	// 아래도, 후일 Bundle을 우리가 GameFeature에 연동하면서 더 깊게 알아보기로 하고, 지금은 앞서 B_LyraDefaultExperience를 로딩해주는 함수로 생각하자
 	// 다양한 리스트 중에서 BundledLoad랑 동일하게 설정되어 있는 애들만 로딩할 수 있는 방식이 ChangeBundleStateForPrimaryAssets이다.
 	TSharedPtr<FStreamableHandle> Handle = AssetManager.ChangeBundleStateForPrimaryAssets(
 		BundleAssetList.Array(),
@@ -125,23 +129,122 @@ void ULyraExperienceManagerComponent::StartExperienceLoad()
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
+// game feature를 로딩하고 활성화
 void ULyraExperienceManagerComponent::OnExperienceLoadComplete()
 {
 	// FrameNumber를 주목해서 보자
 	static int32 OnExperienceLoadComplete_FrameNumber = GFrameNumber;
 
-	// 해당 함수가 불리는 것은 앞서 보았던 StreamableDelegateDelayHelper에 의해 불림
-	OnExperienceFullLoadCompleted();
+	check(LoadState == ELyraExperienceLoadState::Loading);
+	check(CurrentExperience);
+
+	// 이전 활성화된 GameFeature Plugin의 URL을 클리어해준다
+	GameFeaturePluginURLs.Reset();
+
+	auto CollectGameFeaturePluginURLs = [This = this](const UPrimaryDataAsset* Context, const TArray<FString>& FeaturePluginList)
+		{
+			// FeaturePluginList를 순회하며, PluginURL을 ExperienceManagerComponent의 GameFeaturePluginURLS에 추가해준다
+			for (const FString& PluginName : FeaturePluginList)
+			{
+				FString PluginURL;
+				if (UGameFeaturesSubsystem::Get().GetPluginURLByName(PluginName, PluginURL))
+				{
+					This->GameFeaturePluginURLs.AddUnique(PluginURL);
+				}
+			}
+		};
+
+	// GameFeaturesToEnable에 있는 Plugin만 일단 활성화할 GameFeature Plugin 후보군으로 등록
+	CollectGameFeaturePluginURLs(CurrentExperience, CurrentExperience->GameFeaturesToEnable);
+
+	// GameFeaturePluginURLs에 등록된 Plugin을 로딩 및 활성화:
+	// 활성화 해줘야 할 experience
+	NumGameFeaturePluginsLoading = GameFeaturePluginURLs.Num();
+	if (NumGameFeaturePluginsLoading)
+	{
+		LoadState = ELyraExperienceLoadState::LoadingGameFeatures;
+		for (const FString& PluginURL : GameFeaturePluginURLs)
+		{
+			// 매 Plugin이 로딩 및 활성화 이후, OnGameFeaturePluginLoadComplete 콜백 함수 등록
+			// 해당 함수를 살펴보도록 하자
+			UGameFeaturesSubsystem::Get().LoadAndActivateGameFeaturePlugin(PluginURL, FGameFeaturePluginLoadComplete::CreateUObject(this, &ThisClass::OnGameFeaturePluginLoadComplete));
+		}
+	}
+	else
+	{
+		// 해당 함수가 불리는 것은 앞서 보았던 StreamableDelegateDelayHelper에 의해 불림
+		OnExperienceFullLoadCompleted();
+	}
 }
 
+void ULyraExperienceManagerComponent::OnGameFeaturePluginLoadComplete(const UE::GameFeatures::FResult& Result)
+{
+	// 매 GameFeature Plugin이 로딩될 때, 해당 함수가 콜백으로 불린다
+	NumGameFeaturePluginsLoading--;
+	if (NumGameFeaturePluginsLoading == 0)
+	{
+		// GameFeaturePlugin 로딩이 다 끝났을 경우, 기존대로 Loaded로서, OnExperienceFullLoadCompleted 호출한다
+		// GameFeaturePlugin 로딩과 활성화가 끝났다면? UGameFeatureAction을 활성화해야겠지 (조금만 있다가 하장)
+		OnExperienceFullLoadCompleted();
+	}
+}
+
+PRAGMA_DISABLE_OPTIMIZATION
 void ULyraExperienceManagerComponent::OnExperienceFullLoadCompleted()
 {
 	check(LoadState != ELyraExperienceLoadState::Loaded);
+
+	// GameFeature Plugin의 로딩과 활성화 이후, GameFeature Action들을 활성화 시키자:
+	{
+		LoadState = ELyraExperienceLoadState::ExecutingActions;
+
+		// GameFeatureAction 활성화를 위한 Context 준비
+		FGameFeatureActivatingContext Context;
+		{
+			// 월드의 핸들을 세팅해준다
+			// WorldContext를 넘겨주는 이유?
+			// -> UGameFeatureAction를 관리하는 UGameFeaturesSubsystem은 UEngineSubsystem를 상속받고 있음
+			// 그렇다보니 엔진 서브시스템은 엔진이 종료되기 전까지 사라지지 않음...
+			// 그래서 PIE를 아무리 만들고 소멸시켜도 이 PIE와 관련없이 엔진 서브시스템은 종료하기 전까지 영원히 남아있다는 뜻..
+			// 데이터 참조 관련 문제와 어느 월드에다가 바인딩 처리를 해야되는지 모호
+			// 이런 문제를 해결하기 위해서 World Context를 넘겨줌.
+			// (참고) PIE -> 인스턴스가 독립적이라고 생각하지만(착각) 그냥 World로 구분되어있음
+			const FWorldContext* ExistingWorldContext = GEngine->GetWorldContextFromWorld(GetWorld());
+			if (ExistingWorldContext)
+			{
+				Context.SetRequiredWorldContextHandle(ExistingWorldContext->ContextHandle);
+			}
+		}
+
+		auto ActivateListOfActions = [&Context](const TArray<UGameFeatureAction*>& ActionList)
+			{
+				for (UGameFeatureAction* Action : ActionList)
+				{
+					// 명시적으로 GameFeatureAction에 대해 Registering -> Loading -> Activating 순으로 호출한다
+					if (Action)
+					{
+						Action->OnGameFeatureRegistering();
+						Action->OnGameFeatureLoading();
+						Action->OnGameFeatureActivating(Context);
+					}
+				}
+			};
+
+		// 1. Experience의 Actions
+		ActivateListOfActions(CurrentExperience->Actions);
+
+		// 2. Experience의 ActionSets
+		for (const TObjectPtr<ULyraExperienceActionSet>& ActionSet : CurrentExperience->ActionSets)
+		{
+			ActivateListOfActions(ActionSet->Actions);
+		}
+	}
 
 	LoadState = ELyraExperienceLoadState::Loaded;
 	OnExperienceLoaded.Broadcast(CurrentExperience);
 	OnExperienceLoaded.Clear();
 }
+PRAGMA_ENABLE_OPTIMIZATION
 
 const ULyraExperienceDefinition* ULyraExperienceManagerComponent::GetCurrentExperienceChecked() const
 {

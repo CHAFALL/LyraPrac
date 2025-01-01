@@ -18,6 +18,10 @@
 /** FeatureName 정의: static member variable 초기화 */
 const FName ULyraHeroComponent::NAME_ActorFeatureName("Hero");
 
+// (추가)
+/** InputConfig의 GameFeatureAction 활성화 ExtensioEvent 이름 */
+const FName ULyraHeroComponent::NAME_BindInputsNow("BindInputsNow");
+
 ULyraHeroComponent::ULyraHeroComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bStartWithTickEnabled = false;
@@ -219,6 +223,7 @@ TSubclassOf<ULyraCameraMode> ULyraHeroComponent::DetermineCameraMode() const
 PRAGMA_ENABLE_OPTIMIZATION
 
 // 순회(가져오는) 순서 잘 보기!
+// 폰이 생성이 완료가 돼서 맵핑 컨텍스트를 확실하게 할 수 있다라고 보장할 수 있는 시점
 void ULyraHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
@@ -276,6 +281,14 @@ void ULyraHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputCompo
 			}
 		}
 	}
+
+	// 폰이 생성이 완료가 돼서 맵핑 컨텍스트를 확실하게 할 수 있다라고 보장할 수 있는 시점
+	// GameFeatureAction_AddInputConfig의 HandlePawnExtension 콜백 함수 전달
+	// -> 이걸 해주는 이유? gameFeature를 활성화하고 액션을 등록하고 이런 작업자체가 UGameFrameworkComponentManager에서 관리가 되고 있는데 (cf. 비동기적임.)
+	// 얘가 언제 완벽하게 될지 보장 불가..
+	// 그래서 우리는 지금 현재 폰에 설정되길 원했는데 UGameFeatureAction_AddInputConfig::AddToWorld 부분의 등록된 콜백 함수의 핸들을 ActiveData의 ExtensionRequestHandles에 등록하는 시점일 때 폰이 생성이 되지 않았음.... (타이밍 이슈..) 
+	// 그래서 이걸 해줌! (타이밍 이슈를 해결하기 위함!!!)
+	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APawn*>(Pawn), NAME_BindInputsNow);
 }
 
 void ULyraHeroComponent::Input_Move(const FInputActionValue& InputActionValue)
