@@ -163,4 +163,26 @@
 
 - 애니메이션 및 이펙트도 컴포넌트로 관리
 
+##### ControllerComponent_CharacterParts랑 PawnComponent_CharacterParts의 차이점
+
+- ControllerComponent_CharacterParts
+  
+  - Controller에 부착됨
+  
+  - 어떤 모양을 사용할지를 관리 - 요청은 PawnComponent_CharacterParts에게 함
+    
+    - 무겁지 않은 메타 데이터만 들고 있음.
+
+- PawnComponent_CharacterParts
+  
+  - Pawn에 부착됨
+  
+  - ControllerComponent_CharacterParts에게서 요청받은 메타 데이터를 이용해서 실제 메시 렌더링 (실제 작업)
+
+- 왜 ControllerComponent_CharacterParts를 상속받은 블루프린트(1)는 AddComponent로 붙였는데 PawnComponent_CharacterParts를 상속받은 블루프린트(2)는 캐릭터 자체에다가 붙였을까?
+  
+  - (1) 같은 경우 메타 데이터를 들고 있어서 별로 무겁지 않음
+  
+  - (2) 같은 경우 그 자체 값을 들고 있어서 무거움 (Mesh는 무거움)
+
 ---
