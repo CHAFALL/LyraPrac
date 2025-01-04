@@ -185,4 +185,10 @@
   
   - (2) 같은 경우 그 자체 값을 들고 있어서 무거움 (Mesh는 무거움)
 
+##### EquipmentDefinition과 InventoryItemDefinition 차이점
+
+- LyraEquipmentDefinition : 장착에 관련된 메타 데이터 담당(어떻게 장착되고 동작할 것인가?)
+
+- InventoryItemDefinition : Fragment 기반의 데이터 구조 (아이템이 어떤 속성들을 가지고 있는가?)
+
 ---

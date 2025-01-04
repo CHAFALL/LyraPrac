@@ -80,6 +80,9 @@ public:
 
 	USkeletalMeshComponent* GetParentMeshComponent() const;
 	USceneComponent* GetSceneComponentToAttachTo() const;
+
+	// 현재 내가 장착되어 있는 Cosmetic에 관련된 Tag들을 가져오는 함수
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Cosmetics)
 	FGameplayTagContainer GetCombinedTags(FGameplayTag RequiredPrefix) const;
 	void BroadcastChanged();
 
