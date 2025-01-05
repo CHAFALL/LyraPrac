@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayEffectTypes.h"
 #include "Animation/AnimInstance.h"
 #include "LyraAnimInstance.generated.h"
 
@@ -15,9 +16,27 @@ class LYRAPRAC_API ULyraAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
+	/**
+	* UAnimInstance's interface
+	*/
+	virtual void NativeInitializeAnimation() override;
+
+	/**
+	 * member methods
+	 */
+	void InitializeWithAbilitySystem(UAbilitySystemComponent* ASC);
+
 	/** 해당 속성값은 Lyra의 AnimBP에서 사용되는 값이므로 정의해주자 */
 	UPROPERTY(BlueprintReadOnly, Category = "Character State Data")
 	float GroundDistance = -1.0f;
+
+	// Good
+	// 이 방식을 통해 불리언 값 도배를 할 필요가 없어짐!!
+	/** GameplayTag와 AnimInstance의 속성값을 매핑해준다 */
+	// 그래서 GameplayTag가 활성화 되어있으면 자동으로 걔랑 맵핑시킨 불리언 값이
+	// 자동으로 true로 바뀜.
+	UPROPERTY(EditDefaultsOnly, Category = "GameplayTags")
+	FGameplayTagBlueprintPropertyMap GameplayTagPropertyMap;
 };
 
 // 이게 전부? 

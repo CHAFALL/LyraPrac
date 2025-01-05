@@ -1,0 +1,2 @@
+#include "LyraGameplayAbilityTargetData_SingleTarget.h"
+#include UE_INLINE_GENERATED_CPP_BY_NAME(LyraGameplayAbilityTargetData_SingleTarget)

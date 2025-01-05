@@ -15,6 +15,8 @@ public class LyraPrac : ModuleRules
             "InputCore",
             // GAS
             "GameplayTags",
+            "GameplayTasks",
+            "GameplayAbilities",
             // Game Features
             "ModularGameplay",
             "GameFeatures",

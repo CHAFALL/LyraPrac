@@ -5,6 +5,7 @@
 #include "Components/GameFrameworkComponentManager.h"
 #include "LyraPrac/LyraGameplayTags.h"
 #include "LyraPrac/LyraLogChannels.h"
+#include "LyraPrac/AbilitySystem/LyraAbilitySystemComponent.h"
 
 /** feature name을 component 단위니깐 component를 빼고 pawn extension만 넣은 것을 확인할 수 있다 */
 const FName ULyraPawnExtensionComponent::NAME_ActorFeatureName("PawnExtension");
@@ -40,6 +41,48 @@ void ULyraPawnExtensionComponent::SetupPlayerInputComponent()
 	// CanChangeInitState쪽에서 업데이트가 멈추는 부분이 있는데 이를 해결하기 위함.
 	// ForceUpdate로 다시 InitState 상태 변환 시작 (연결 고리)
 	CheckDefaultInitialization();
+}
+
+// Good
+// PawnExtension에서 AbilitySystem을 초기화하는 이유:
+// 1. PawnExtensionComponent는 해당 Pawn의 확장 기능을 담당
+// 2. Owner(Pawn)의 AbilitySystem 설정을 담당하기에 적합한 위치
+// 3. 현재 Pawn을 AbilitySystem의 Avatar로 설정하여 능력치 시스템 구성
+// 컴포넌트의 책임
+// PawnExtensionComponent: Pawn의 기본 시스템 초기화 / 확장 담당
+// HeroComponent : 영웅 특성, 입력, 카메라 등 게임플레이 로직 담당
+// 그래서 Hero에서도 가능은 하겠지만 여기서 처리
+void ULyraPawnExtensionComponent::InitializeAbilitySystem(ULyraAbilitySystemComponent* InASC, AActor* InOwnerActor)
+{
+	check(InASC && InOwnerActor);
+
+	if (AbilitySystemComponent == InASC)
+	{
+		return;
+	}
+
+	if (AbilitySystemComponent)
+	{
+		UninitializeAbilitySystem();
+	}
+
+	APawn* Pawn = GetPawnChecked<APawn>();
+	AActor* ExistingAvatar = InASC->GetAvatarActor();
+	check(!ExistingAvatar);
+
+	// ASC를 업데이트하고, InitAbilityActorInfo를 Pawn과 같이 호출하여, AvatarActor를 Pawn으로 업데이트 해준다
+	AbilitySystemComponent = InASC;
+	AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, Pawn);
+}
+
+void ULyraPawnExtensionComponent::UninitializeAbilitySystem()
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	AbilitySystemComponent = nullptr;
 }
 void ULyraPawnExtensionComponent::OnRegister()
 {

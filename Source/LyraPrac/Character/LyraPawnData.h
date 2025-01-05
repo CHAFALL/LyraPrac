@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "LyraPawnData.generated.h"
 
+class ULyraAbilitySet;
 class ULyraInputConfig;
 class ULyraCameraMode;
 
@@ -35,7 +36,33 @@ public:
 	/** input configuration used by player controlled pawns to create input mappings and bind input actions */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|InputConfig")
 	TObjectPtr<ULyraInputConfig> InputConfig;
+
+	// 이 AbilitySets 설정은 PlayerState에서 진행됨
+	/** 해당 Pawn의 Ability System에 허용할 AbilitySet */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Abilities")
+	TArray<TObjectPtr<ULyraAbilitySet>> AbilitySets;
 };
+
+
+// cf
+//PawnClass:
+//GameMode나 GameState에서 스폰할 때 참조
+//Character 스폰 시점에 사용됨
+//
+//
+//DefaultCameraMode :
+//LyraCameraComponent에서 설정
+//ULyraHeroComponent::DetermineCameraMode에서 실제로 적용
+//
+//
+//InputConfig :
+//ULyraHeroComponent::InitializePlayerInput에서 설정
+//Input Mappings와 Actions를 바인딩할 때 사용
+//
+//
+//AbilitySets :
+//PlayerState에서 설정(주석에 명시된 대로)
+//ULyraAbilitySystemComponent::GiveAbilitySets를 통해 실제 적용
 
 
 // FObjectInitializer가 중요한 이유:

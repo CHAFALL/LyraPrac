@@ -7,6 +7,7 @@
 #include "Components/GameFrameworkInitStateInterface.h"
 #include "LyraPawnExtensionComponent.generated.h"
 
+class ULyraAbilitySystemComponent;
 class ULyraPawnData;
 
 /**
@@ -59,7 +60,13 @@ public:
 	const T* GetPawnData() const { return Cast<T>(PawnData); }
 	void SetPawnData(const ULyraPawnData* InPawnData);
 	void SetupPlayerInputComponent();
+	ULyraAbilitySystemComponent* GetLyraAbilitySystemComponent() const { return AbilitySystemComponent; }
+
 	
+	/** AbilitySystemComponent의 AvatorActor 대상 초기화/해제 호출 */
+	void InitializeAbilitySystem(ULyraAbilitySystemComponent* InASC, AActor* InOwnerActor);
+	void UninitializeAbilitySystem();
+
 	/**
 	* UPawnComponent interfaces
 	 */
@@ -83,6 +90,14 @@ public:
 	 */
 	UPROPERTY(EditInstanceOnly, Category = "Lyra|Pawn")
 	TObjectPtr<const ULyraPawnData> PawnData;
+
+	/** AbilitySystemComponent 캐싱 */
+	UPROPERTY()
+	TObjectPtr<ULyraAbilitySystemComponent> AbilitySystemComponent;
+
+
+	// 이렇게 캐싱을 해두는 이유?
+	// -> 나중에 편리하게 사용하려고.
 };
 
 // 핵심은

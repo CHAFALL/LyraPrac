@@ -6,6 +6,8 @@
 #include "ModularPlayerController.h"
 #include "LyraPlayerController.generated.h"
 
+class ULyraAbilitySystemComponent;
+class ALyraPlayerState;
 /**
  * 
  */
@@ -16,4 +18,18 @@ class LYRAPRAC_API ALyraPlayerController : public AModularPlayerController
 public:
 	ALyraPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	/**
+	* PlayerController interface
+	*/
+	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
+
+	/**
+	 * member methods
+	 */
+	ALyraPlayerState* GetLyraPlayerState() const;
+	ULyraAbilitySystemComponent* GetLyraAbilitySystemComponent() const;
 };
+
+
+// 왜 인풋에 이런 처리(PostProcessInput)가 있을까?
+// -> 실질적 모든 인풋 처리는 다 플레이어 컨트롤러에서 한다고 보면 됨.

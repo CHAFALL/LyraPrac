@@ -6,6 +6,7 @@
 #include "UObject/NoExportTypes.h"
 #include "LyraEquipmentDefinition.generated.h"
 
+class ULyraAbilitySet;
 class ULyraEquipmentInstance;
 
 USTRUCT()
@@ -44,6 +45,12 @@ public:
 	/** 해당 장착 아이템을 사용하면, 어떤 Actor가 Spawn이 되는지 정보를 담고 있다 */
 	UPROPERTY(EditDefaultsOnly, Category = Equipment)
 	TArray<FLyraEquipmentActorToSpawn> ActorsToSpawn;
+
+	// 무기에 따라 능력이 다를테니
+	/** 장착을 통해 부여 가능한 Ability Set */
+	UPROPERTY(EditDefaultsOnly, Category = Equipment)
+	TArray<TObjectPtr<ULyraAbilitySet>> AbilitySetsToGrant;
+	
 };
 
 // 원래 인스턴스 -  definition(대표) 파일을 소유하게 되면서 클래스로 생성해서 관리하는 형태

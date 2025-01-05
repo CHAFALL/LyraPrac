@@ -11,6 +11,7 @@
 #include "Components/GameFrameworkComponentManager.h"
 #include "LyraPrac/LyraGameplayTags.h"
 #include "LyraPrac/LyraLogChannels.h"
+#include "LyraPrac/AbilitySystem/LyraAbilitySystemComponent.h"
 #include "LyraPrac/Camera/LyraCameraComponent.h"
 #include "LyraPrac/Player/LyraPlayerController.h"
 #include "LyraPrac/Player/LyraPlayerState.h"
@@ -133,6 +134,7 @@ bool ULyraHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Mana
 	return false;
 }
 
+// Good
 void ULyraHeroComponent::HandleChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState)
 {
 	const FLyraGameplayTags& InitTags = FLyraGameplayTags::Get();
@@ -147,10 +149,23 @@ void ULyraHeroComponent::HandleChangeInitState(UGameFrameworkComponentManager* M
 			return;
 		}
 
-		// Input과 Camera에 대한 핸들링... (TODO)
-
+		// 추가
 		const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
 		const ULyraPawnData* PawnData = nullptr;
+		if (ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+		{
+			PawnData = PawnExtComp->GetPawnData<ULyraPawnData>();
+
+			// DataInitialized 단계까지 오면, Pawn이 Controller에 Possess되어 준비된 상태이다:
+			// - InitAbilityActorInfo 호출로 AvatarActor 재설정이 필요하다
+			// 근데 왜 하필 PawnExtComp에서?
+			// 1. PawnExtComp에다가 어빌리티 시스템 캐싱
+			// 2. Possess 이후에 마저 진행해야 할 InitAbilityActorInfo 설정 완료
+			PawnExtComp->InitializeAbilitySystem(LyraPS->GetLyraAbilitySystemComponent(), LyraPS);
+		}
+
+
+		// Input과 Camera에 대한 핸들링... (TODO)
 		if (ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
 		{
 			PawnData = PawnExtComp->GetPawnData<ULyraPawnData>();
@@ -273,6 +288,12 @@ void ULyraHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputCompo
 
 				ULyraInputComponent* LyraIC = CastChecked<ULyraInputComponent>(PlayerInputComponent);
 				{
+					// 추가
+					{
+						TArray<uint32> BindHandles;
+						LyraIC->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
+					}
+
 					// InputTag_Move와 InputTag_Look_Mouse에 대해 각각 Input_Move()와 Input_LookMouse() 멤버 함수에 바인딩시킨다:
 					// - 바인딩한 이후, Input 이벤트에 따라 멤버 함수가 트리거된다
 					LyraIC->BindNativeAction(InputConfig, GameplayTags.InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move, false);
@@ -342,6 +363,34 @@ void ULyraHeroComponent::Input_LookMouse(const FInputActionValue& InputActionVal
 		// Y에는 Pitch 값!
 		double AimInversionValue = -Value.Y;
 		Pawn->AddControllerPitchInput(AimInversionValue);
+	}
+}
+
+void ULyraHeroComponent::Input_AbilityInputTagPressed(FGameplayTag InputTag)
+{
+	if (const APawn* Pawn = GetPawn<APawn>())
+	{
+		if (const ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+		{
+			if (ULyraAbilitySystemComponent* LyraASC = PawnExtComp->GetLyraAbilitySystemComponent())
+			{
+				LyraASC->AbilityInputTagPressed(InputTag);
+			}
+		}
+	}
+}
+
+void ULyraHeroComponent::Input_AbilityInputTagReleased(FGameplayTag InputTag)
+{
+	if (const APawn* Pawn = GetPawn<APawn>())
+	{
+		if (const ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+		{
+			if (ULyraAbilitySystemComponent* LyraASC = PawnExtComp->GetLyraAbilitySystemComponent())
+			{
+				LyraASC->AbilityInputTagReleased(InputTag);
+			}
+		}
 	}
 }
 

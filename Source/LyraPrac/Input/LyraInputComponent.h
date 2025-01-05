@@ -65,3 +65,6 @@ void ULyraInputComponent::BindAbilityActions(const ULyraInputConfig* InputConfig
 		}
 	}
 }
+// BindAbilityActions
+// BindNativeAction와의 차이점?
+// -> TriggerEvent를 결정 짓지 않음, 대신에 PressedFunc이랑 ReleasedFunc를 한번에 지정을 하고 시작

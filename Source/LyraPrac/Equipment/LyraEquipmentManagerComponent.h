@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/PawnComponent.h"
+#include "LyraPrac/AbilitySystem/LyraAbilitySet.h"
 #include "LyraEquipmentManagerComponent.generated.h"
 
 /** forward declarations */
@@ -22,6 +23,11 @@ struct FLyraAppliedEquipmentEntry
 	/** EquipmentDefinition을 통해 생성도니 인스턴스 */
 	UPROPERTY()
 	TObjectPtr<ULyraEquipmentInstance> Instance = nullptr;
+
+	// (추가)
+	/** 무기에 할당된 허용가능한 GameplayAbility */
+	UPROPERTY()
+	FLyraAbilitySet_GrantedHandles GrantedHandles;
 };
 
 /**
@@ -39,6 +45,9 @@ struct FLyraEquipmentList
 
 	ULyraEquipmentInstance* AddEntry(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition);
 	void RemoveEntry(ULyraEquipmentInstance* Instance);
+
+	ULyraAbilitySystemComponent* GetAbilitySystemComponent() const;
+
 
 	/** 장착물에 대한 관리 리스트 */
 	UPROPERTY()
@@ -62,6 +71,9 @@ public:
 
 	ULyraEquipmentInstance* EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition);
 	void UnequipItem(ULyraEquipmentInstance* ItemInstance);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<ULyraEquipmentInstance*> GetEquipmentInstancesOfType(TSubclassOf<ULyraEquipmentInstance> InstanceType) const;
 
 	UPROPERTY()
 	FLyraEquipmentList EquipmentList;
