@@ -368,6 +368,8 @@ void ULyraGameplayAbility_RangedWeapon::OnTargetDataReadyCallback(const FGamepla
 		{
 			// OnRangeWeaponTargetDataReady BP 노드 호출한다:
 			// - 후일 여기서 우리는 GCN(GameplayCueNotify)를 처리할 것이다
+			// 피격판정 대상에 대해서 핏자국이나 벽에 맞은 자국 같은 작업을 하는 것이
+			// GameplayCueNotify이다.
 			OnRangeWeaponTargetDataReady(LocalTargetDataHandle);
 		}
 		else
