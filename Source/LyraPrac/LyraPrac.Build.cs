@@ -26,6 +26,14 @@ public class LyraPrac : ModuleRules
             "EnhancedInput",
             // CommonUser
             "CommonUser",
+            // CommonGame
+            "CommonGame",
+            // CommonUI
+            "CommonUI",
+            // UMG
+            "UMG",
+            // UIExtension
+            "UIExtension",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
