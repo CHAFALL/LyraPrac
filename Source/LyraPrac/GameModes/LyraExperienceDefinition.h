@@ -22,6 +22,12 @@ class LYRAPRAC_API ULyraExperienceDefinition : public UPrimaryDataAsset
 public:
 	ULyraExperienceDefinition(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	// (추가)
+	// 동적으로 우리가 원하는 번들 추가 가능하도록 설정
+#if WITH_EDITORONLY_DATA
+	virtual void UpdateAssetBundleData() override;
+#endif
+
 	/**
 	 * member variables
 	 */

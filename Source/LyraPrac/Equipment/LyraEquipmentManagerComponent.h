@@ -72,6 +72,15 @@ public:
 	ULyraEquipmentInstance* EquipItem(TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition);
 	void UnequipItem(ULyraEquipmentInstance* ItemInstance);
 
+	/** 장착물 중 처음 것을 반환 없으면 NULL */
+	ULyraEquipmentInstance* GetFirstInstanceOfType(TSubclassOf<ULyraEquipmentInstance> InstanceType);
+
+	template <typename T>
+	T* GetFirstInstanceOfType()
+	{
+		return (T*)GetFirstInstanceOfType(T::StaticClass());
+	}
+
 	UFUNCTION(BlueprintCallable)
 	TArray<ULyraEquipmentInstance*> GetEquipmentInstancesOfType(TSubclassOf<ULyraEquipmentInstance> InstanceType) const;
 

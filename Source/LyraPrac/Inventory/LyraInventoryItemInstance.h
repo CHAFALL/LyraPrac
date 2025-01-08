@@ -12,13 +12,14 @@ class ULyraInventoryItemDefinition;
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class LYRAPRAC_API ULyraInventoryItemInstance : public UObject
 {
 	GENERATED_BODY()
 public:
 	ULyraInventoryItemInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	UFUNCTION(BlueprintCallable, BlueprintPure = false, meta = (DeterminesOutputType = FragmentClass))
 	const ULyraInventoryItemFragment* FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const;
 
 	// 얘의 역할은 위의 함수(FindFragmentByClass)를 불러주는 것임

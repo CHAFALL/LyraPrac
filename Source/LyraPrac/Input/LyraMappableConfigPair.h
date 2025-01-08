@@ -14,6 +14,7 @@ struct FLyraMappableConfigPair
 public:
 	FLyraMappableConfigPair() = default;
 
+	// 보면 TSoftObjectPtr인 이유는 서버에선 필요없기 때문임을 알 수 있다.
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UPlayerMappableInputConfig> Config;
 

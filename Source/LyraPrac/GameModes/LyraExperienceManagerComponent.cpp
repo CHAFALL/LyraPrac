@@ -81,6 +81,20 @@ void ULyraExperienceManagerComponent::StartExperienceLoad()
 	TSet<FPrimaryAssetId> BundleAssetList;
 	BundleAssetList.Add(CurrentExperience->GetPrimaryAssetId());
 
+	// (추가)
+	// ExperienceActionSet의 순회하며, BundleAssetList로 추가하자:
+	for (const TObjectPtr<ULyraExperienceActionSet>& ActionSet : CurrentExperience->ActionSets)
+	{
+		if (ActionSet)
+		{
+			// 앞서, 우리가 생성한 HAS_Shooter_SharedHUD가 추가되겠다 (물론 추가적인 HAS_Shooter_XXX)도 추가될거다
+			// - BundleAssetList는 Bundle로 등록할 Root의 PrimaryDataAsset를 추가하는 과정이다
+			//   (->??? 무슨말인가 싶을건데 ChangeBundleStateForPrimaryAssets)을 살펴보면서 이해하자
+			BundleAssetList.Add(ActionSet->GetPrimaryAssetId());
+		}
+	}
+
+
 	// load assets associated with the experience
 	// 아래는 우리가 후일 GameFeature를 사용하여, Experience에 바인딩된 GameFeature Plugin을 로딩할 Bundle 이름을 추가한다:
 	// - Bundle이라는게 후일 우리가 로딩할 에셋의 카테고리 이름이라고 생각하면 된다 (일단 지금은 넘어가자 후일, 또 다룰 것이다!)
@@ -102,8 +116,18 @@ void ULyraExperienceManagerComponent::StartExperienceLoad()
 
 	FStreamableDelegate OnAssetsLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnExperienceLoadComplete);
 
+	// Good
 	// 아래도, 후일 Bundle을 우리가 GameFeature에 연동하면서 더 깊게 알아보기로 하고, 지금은 앞서 B_LyraDefaultExperience를 로딩해주는 함수로 생각하자
 	// 다양한 리스트 중에서 BundledLoad랑 동일하게 설정되어 있는 애들만 로딩할 수 있는 방식이 ChangeBundleStateForPrimaryAssets이다.
+	// 의문점 : 클라이언트나, 서버 키워드가 있어야 로딩이 되어야 되는 것 아닌가? (번들에 관련된 것만 로딩을 하는 함수잖아?)
+	// -> (Test) ULyraExperienceDefinition의 DefaultPawnData를 TObjectPtr가 아닌 TSoftObjectPtr로 정의한다면?
+	// (Test Result) 아무것도 로딩이 안됨을 알 수 있음
+	// 즉, TObjectPtr는 마이그레이션처럼 강하게 묶여있는 애들을 다 데리고 옴 (그래서 번들로 등록하지 않아도 같이 딸려오는 것임)
+	// TSoftObjectPtr의 경우 걔의 위치를 알고 있는 것일 뿐이라 로딩을 한 뒤에 사용이 가능하다 그래서 다 끌고 오지 않음
+
+	// 그래서 보면 클라랑 서버랑 상관없이 무조건 가져와야 되는 데이터들은 TObjectPtr로 설정이 되어있고
+	// 일부만 알아야 되는 경우는 TSoftObjectPtr로 설정이 되어 있음을 알 수 있다.
+
 	TSharedPtr<FStreamableHandle> Handle = AssetManager.ChangeBundleStateForPrimaryAssets(
 		BundleAssetList.Array(),
 		BundlesToLoad,

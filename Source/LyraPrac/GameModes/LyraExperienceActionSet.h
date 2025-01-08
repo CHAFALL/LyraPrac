@@ -19,6 +19,12 @@ class LYRAPRAC_API ULyraExperienceActionSet : public UPrimaryDataAsset
 public:
 	ULyraExperienceActionSet();
 
+	// (추가)
+	// 기회되면 UpdateAssetBundleData() 타고 들어가서 보기
+#if WITH_EDITORONLY_DATA
+	virtual void UpdateAssetBundleData() override;
+#endif
+
 	/**
 	 * member variables
 	 */

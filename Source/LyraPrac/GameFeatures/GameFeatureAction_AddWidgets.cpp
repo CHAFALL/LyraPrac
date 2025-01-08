@@ -18,7 +18,16 @@ void UGameFeatureAction_AddWidgets::AddWidgets(AActor* Actor, FPerContextData& A
 		// Layout의 요청을 순회하자 (보통 하나만 들어가 있긴하다)
 		for (const FLyraHUDLayoutRequest& Entry : Layout)
 		{
-			if (TSubclassOf<UCommonActivatableWidget> ConcreteWidgetClass = Entry.LayoutClass.Get())
+			// Entry(FLyraHUDLayoutRequest)의 LayoutClass를 보면 TSoftClassPtr(경로 방식)로 되어 있음을 알 수 있다.
+			// -> 그럼 로딩해서 넣어줘야 겠지? (inputConfig 참고)
+			// 근데 얘는 로딩을 해준 적이 없어서 문제가 발생했음. <- 그럼 해주면 되겠네??
+			// -> No!! 액션이라는 것은 클라와 서버 모두 똑같이 발동이 되는데 서버가 UI 관련된 것을 메모리에 올릴 필요가 없음.....
+			// 그래서 Lyra에서는 그러한 문제를 해결하기 위해서 클라이언트들만 해당 에셋들을 로딩하도록 
+			// 관리를 해줌. 그래서 굳이 Get을 해서 여기에 가져온 것임.
+			// 그럼 해결책은?? 
+			// -> 이 AddWidget이 들어오기 전에 로딩이 이미 완료가 되어야 겠지? (클라만)
+			// -> 어디서? (ExperienceManagerComponent에서 해줄 것임)
+			if (TSubclassOf<UCommonActivatableWidget> ConcreteWidgetClass = Entry.LayoutClass.Get()) 
 			{
 				ActiveData.LayoutsAdded.Add(UCommonUIExtensions::PushContentToLayer_ForPlayer(LocalPlayer, Entry.LayerID, ConcreteWidgetClass));
 			}
