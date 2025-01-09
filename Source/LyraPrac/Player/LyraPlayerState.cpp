@@ -5,6 +5,8 @@
 #include "Abilities/GameplayAbilityTypes.h"
 #include "LyraPrac/AbilitySystem/LyraAbilitySet.h"
 #include "LyraPrac/AbilitySystem/LyraAbilitySystemComponent.h"
+#include "LyraPrac/AbilitySystem/Attributes/LyraCombatSet.h"
+#include "LyraPrac/AbilitySystem/Attributes/LyraHealthSet.h"
 #include "LyraPrac/Character/LyraPawnData.h"
 #include "LyraPrac/GameModes/LyraExperienceManagerComponent.h"
 #include "LyraPrac/GameModes/LyraGameModeBase.h"
@@ -12,6 +14,13 @@
 ALyraPlayerState::ALyraPlayerState(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	AbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<ULyraAbilitySystemComponent>(this, TEXT("AbilitySystemComponent"));
+	// 어? 캐싱을 안하네??
+	// -> AbilitySystemComponent이 Init 되는 과정에서 Outer(PlayerState)에 있는 Attribute를 알아서 다 가져옴!
+	// 그다음에 AbilitySystemComponent가 알아서 저장함.
+	// 그래서 반드시 Attribute는 AbilitySystem이 생성되는 위치에 같이 있어야 한다! (Outer가 동일해야 됨!!)
+	CreateDefaultSubobject<ULyraHealthSet>(TEXT("HealthSet"));
+	CreateDefaultSubobject<ULyraCombatSet>(TEXT("CombatSet")); 
+
 }
 
 void ALyraPlayerState::PostInitializeComponents()

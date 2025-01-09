@@ -38,7 +38,6 @@ class ULyraPawnData;
 // IGameFrameworkInitStateInterface: 우리가 만든 RegisterInitState 애네에 대한 초기화를 편리하게 관리할 수 있도록 만들어준 인터페이스
 
 
-
 UCLASS()
 class LYRAPRAC_API ULyraPawnExtensionComponent : public UPawnComponent, public IGameFrameworkInitStateInterface
 {
@@ -67,6 +66,11 @@ public:
 	void InitializeAbilitySystem(ULyraAbilitySystemComponent* InASC, AActor* InOwnerActor);
 	void UninitializeAbilitySystem();
 
+	// (추가)
+	/** OnAbilitySystem[Initialized|Uninitialized] Delegate에 추가: */
+	void OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate Delegate);
+	void OnAbilitySystemUninitialized_Register(FSimpleMulticastDelegate::FDelegate Delegate);
+
 	/**
 	* UPawnComponent interfaces
 	 */
@@ -85,6 +89,8 @@ public:
 	// PawnExtension 컴포넌트는 모든 컴포넌트들에 대해서 초기화를 관리하는 놈이기 때문에
 	// 데이터를 핸들링 하는 것은 없음.
 
+	// 이렇게 캐싱을 해두는 이유?
+	// -> 나중에 편리하게 사용하려고.
 	/**
 	 * Pawn을 생성한 데이터를 캐싱 - 이렇게 해야 hero 컴포넌트라던가 다른 애들도 정상적으로 잘 사용 가능
 	 */
@@ -94,10 +100,11 @@ public:
 	/** AbilitySystemComponent 캐싱 */
 	UPROPERTY()
 	TObjectPtr<ULyraAbilitySystemComponent> AbilitySystemComponent;
-
-
-	// 이렇게 캐싱을 해두는 이유?
-	// -> 나중에 편리하게 사용하려고.
+	
+	// (추가)
+	/** ASC Init과 Uninit의 Delegate 추가 */
+	FSimpleMulticastDelegate OnAbilitySystemInitialized;
+	FSimpleMulticastDelegate OnAbilitySystemUninitialized;
 };
 
 // 핵심은
