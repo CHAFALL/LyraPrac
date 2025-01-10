@@ -6,6 +6,8 @@
 #include "UObject/NoExportTypes.h"
 #include "LyraInventoryItemDefinition.generated.h"
 
+class ULyraInventoryItemInstance;
+
 // 아이템을 상속 느낌이 아닌 컴포넌트 방식으로도 할 수 있구나..
 
 /**
@@ -24,6 +26,12 @@ class ULyraInventoryItemFragment : public UObject
 {
 	GENERATED_BODY()
 public:
+	// (추가)
+	// 앞으로 모든 ItemFragment는 얘가 반드시 다 실행이 될 것임.
+	// 그러니깐 앞으로 Fragment에 대한 어떤 정의가 필요하면 여기서 해!
+	// 아이템 인스턴스가 생성되는 시점에 호출되는 함수,
+	/** interface to call when inventory item instance is added to UHakInventoryManagerComponent's InventoryList */
+	virtual void OnInstanceCreated(ULyraInventoryItemInstance* Instance) const {}
 };
 
 

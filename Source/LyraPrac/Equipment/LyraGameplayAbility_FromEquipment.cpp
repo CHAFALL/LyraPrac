@@ -2,6 +2,7 @@
 
 #include "LyraGameplayAbility_FromEquipment.h"
 #include "LyraEquipmentInstance.h"
+#include "LyraPrac/Inventory/LyraInventoryItemInstance.h"
 
 ULyraEquipmentInstance* ULyraGameplayAbility_FromEquipment::GetAssociatedEquipment() const
 {
@@ -13,6 +14,20 @@ ULyraEquipmentInstance* ULyraGameplayAbility_FromEquipment::GetAssociatedEquipme
 	{
 		// GameplayAbility_FromEquipment는 EquipmentInstance로부터 GiveAbility를 진행했으므로, SourceObject에 EquipmentInstance가 저장되어 있음
 		return Cast<ULyraEquipmentInstance>(Spec->SourceObject.Get());
+	}
+	return nullptr;
+}
+
+// Good
+// ItemDef -> ItemInstance -> EquipmentInstance -> Ability
+ULyraInventoryItemInstance* ULyraGameplayAbility_FromEquipment::GetAssociatedItem() const
+{
+	if (ULyraEquipmentInstance* Equipment = GetAssociatedEquipment())
+	{
+		// In Lyra, equipment is equipped by inventory item instance:
+		// - so, equipment's instigator should be inventory item instance
+		// - otherwise, it will return nullptr by failing casting to LyraInventoryItemInstance
+		return Cast<ULyraInventoryItemInstance>(Equipment->GetInstigator());
 	}
 	return nullptr;
 }

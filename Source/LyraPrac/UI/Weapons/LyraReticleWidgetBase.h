@@ -19,6 +19,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitializeFromWeapon(ULyraWeaponInstance* InWeapon);
 
+	// (추가)
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnWeaponInitialized();
 

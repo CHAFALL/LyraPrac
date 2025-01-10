@@ -6,6 +6,7 @@
 #include "LyraPrac/AbilitySystem/Abilities/LyraGameplayAbility.h"
 #include "LyraGameplayAbility_FromEquipment.generated.h"
 
+class ULyraInventoryItemInstance;
 class ULyraEquipmentInstance;
 /**
  * 
@@ -16,4 +17,5 @@ class LYRAPRAC_API ULyraGameplayAbility_FromEquipment : public ULyraGameplayAbil
 	GENERATED_BODY()
 public:
 	ULyraEquipmentInstance* GetAssociatedEquipment() const;
+	ULyraInventoryItemInstance* GetAssociatedItem() const;
 };

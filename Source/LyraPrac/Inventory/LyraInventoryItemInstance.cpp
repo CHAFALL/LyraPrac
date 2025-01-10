@@ -19,3 +19,23 @@ const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClas
 
 	return nullptr;
 }
+
+void ULyraInventoryItemInstance::AddStatTagStack(FGameplayTag Tag, int32 StackCount)
+{
+	StatTags.AddStack(Tag, StackCount);
+}
+
+void ULyraInventoryItemInstance::RemoveStatTagStack(FGameplayTag Tag, int32 StackCount)
+{
+	StatTags.RemoveStack(Tag, StackCount);
+}
+
+bool ULyraInventoryItemInstance::HasStatTag(FGameplayTag Tag) const
+{
+	return StatTags.ContainsTag(Tag);
+}
+
+int32 ULyraInventoryItemInstance::GetStatTagStackCount(FGameplayTag Tag) const
+{
+	return StatTags.GetStackCount(Tag);
+}
